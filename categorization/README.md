@@ -31,6 +31,20 @@ Notes:
 - The default file/dir names above can be overridden via the `DATA_DIR` environment variable (see [Environment Variables](#environment-variables)).
 - All other files under `original_data/` and `sweep_result_clean_split/` are **generated** by the pipeline — see the full [Directory Structure](#directory-structure) below.
 
+## Quick path: download the pre-built taxonomy
+
+If you only want to **use** the taxonomy (i.e., reproduce the paper's training
+runs) and do not need to regenerate it, skip Steps 1-10 entirely and fetch the
+published artifact from Hugging Face:
+
+```bash
+python3 categorization/download_taxonomy.py
+# → categorization/RadSLDP_nvcc_taxonomy.json
+```
+
+The full pipeline below is only needed if you want to **rebuild** the taxonomy
+from raw clinical-indication text (e.g., to extend it to a new dataset).
+
 ## Pipeline Overview
 
 ```
@@ -57,7 +71,9 @@ sweep_result_clean_split/
 │
 ├── 8. generate_final_outputs.py ──► id_to_categorized_reasons.json
 │
-└── 9. augment_training_data.py ───► original_data/augmented/ (6 files)
+├── 9. augment_training_data.py ───► original_data/augmented/ (6 files)
+│
+└── 10. apply_expert_corrections.py ► RadSLDP_nvcc_taxonomy.json   [public artifact]
 ```
 
 ## Directory Structure
@@ -337,6 +353,27 @@ Each sample gets three new fields:
 > run **Step 8** (the Rex-test extra is skipped if absent) → run **Step 9** →
 > run **Step 8 again** to fold the `rex_test:*` entries into the final
 > `id_to_categorized_reasons.json` / `id_to_final_categories.json`.
+
+### Step 10: Apply Expert Corrections (Final Clean-Up)
+
+Of the 347 GPT-annotated cluster summaries, five were re-labeled by a certified
+medical physicist (see paper §2.2). This script flips `image_inferable` from
+`"no"` to `"yes"` on every reason whose `cluster_summary` falls in one of the
+five corrected categories and writes the **public taxonomy file** consumed by
+`training/hf_finetune.py`.
+
+```bash
+python categorization/apply_expert_corrections.py
+# or override paths
+INPUT=path/to/id_to_categorized_reasons.json \
+OUTPUT=path/to/RadSLDP_nvcc_taxonomy.json \
+  python categorization/apply_expert_corrections.py
+```
+
+**Inputs:** `id_to_categorized_reasons.json` (Step 8 output, with `rex_test:*`
+entries already folded in per the iterative ordering above).
+**Outputs:** `RadSLDP_nvcc_taxonomy.json` — the artifact released alongside the
+paper and the file that `training/hf_finetune.py` loads as `ID_TO_CAT_JSON`.
 
 ## Environment Variables
 
