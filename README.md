@@ -57,25 +57,31 @@ RadSLDP/
 │                      image-inferable / non-inferable cluster summaries.
 │                      Outputs RadSLDP_nvcc_taxonomy.json — the public artifact
 │                      loaded by training.
+│
 ├── datasets/          Per-dataset download + preprocessing scripts for
 │                      ReXGradient, CheXpert+, and MIMIC-CXR. All three are
 │                      access-controlled (PhysioNet credential, Stanford AIMI
 │                      DUA, Hugging Face access request); see each subfolder's
 │                      README.
+│
 ├── training/          Fine-tuning entry point hf_finetune.py and per-dataset
 │                      drivers run_training_{rex,chex,mimic}.sh. Each driver
 │                      trains all 3 models under all 4 regimes
 │                      (Non-private / DP-SGD / LDP / RadSLDP) at per-token
 │                      ε = 8. train_rex_ablation.sh sweeps ε ∈ {4, 8, ∞} on
 │                      ReXGradient for Table 3 of the paper.
+│
 ├── prediction/        Inference driver prediction.py and per-dataset shells
 │                      that generate report predictions on the test split for
 │                      every trained checkpoint.
+│
 ├── evaluation/        evaluation.py computes BLEU-1/4, ROUGE-L, CheXbert
 │                      Micro-F1, and F1-RadGraph using the bundled rrg_eval/
 │                      package.
+│
 ├── environment.yml    Conda environment (PyTorch + transformers + trl +
 │                      opacus + peft + huggingface_hub).
+│
 └── README.md          This file.
 ```
 
